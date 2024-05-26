@@ -53,15 +53,25 @@ class Bleichenbacher:
         self.B = B
         self.M = [(2 * B, 3 * B - 1)]
         self.s = (n + 2 * B) // (3 * B - 1)
+        self.usedS = []
 
     def find_next_s(self, ciphertext):
         originalS = self.s
+        for steps in self.usedS:
+            encrypteds = encrypt((self.s+steps).to_bytes(128, 'big'), self.e, self.n)
+            cipherToTest = (encrypteds * ciphertext) % self.n
+            if oracle.query(cipherToTest):
+                self.s = self.s + steps
+                print("Steps needed: " + str(self.s - originalS))
+                return self.s
         while True:
             self.s += 1
             encrypteds = encrypt(self.s.to_bytes(128, 'big'), self.e, self.n)
             cipherToTest = (encrypteds * ciphertext) % self.n
             if oracle.query(cipherToTest):
                 print("Steps needed: " + str(self.s - originalS))
+                self.usedS.append(self.s - originalS)
+                self.usedS = sorted(self.usedS)
                 return self.s
 
     def bleichenbacher_attack(self, ciphertext):
@@ -98,17 +108,17 @@ class Bleichenbacher:
         print("Intervalllength: " + str(self.M[0][1] - self.M[0][0]))
         # End of phase 2
         while True:
-            # self.s *= 2
+            self.s *= 2
             self.find_next_s(ciphertext)
             M_next = []
             for a, b in self.M:
-                lowerR = (self.s * a) // self.n
-                upperR = (self.s * b) // self.n + 1
+                lowerR = (self.s * a - 3*self.B+1) // self.n
+                upperR = (self.s * b -2*self.B) // self.n +1
                 for r in range(lowerR, upperR):
-                    new_a = max(self.s * a, a0 + r * self.n)
-                    new_b = min(self.s * b, b0 + r * self.n)
+                    new_a = max(a, (2 * self.B + r * self.n) // self.s)
+                    new_b = min(b, (3 * self.B - 1 + r * self.n) // self.s)
                     if new_a <= new_b:
-                        M_next.append((max(a, (a0 + r * self.n) // self.s), min(b, (b0 + r * self.n) // self.s + 1)))
+                        M_next.append((new_a, new_b))
             self.M = M_next
             print(self.M)
             print("Intervalllength: " + str(self.M[0][1] - self.M[0][0]))
