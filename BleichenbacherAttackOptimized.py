@@ -4,6 +4,8 @@ from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from Crypto.Util.number import bytes_to_long, long_to_bytes
 import matplotlib.pyplot as plt
+
+
 def plot_intervals_as_lines(intervals):
     """
     Plots a straight line from the lower bound to the upper bound of each interval.
@@ -17,11 +19,13 @@ def plot_intervals_as_lines(intervals):
         ax.plot([lower_bound, upper_bound], [i, i], marker='o')
 
     ax.set_yticks(range(len(intervals)))
-    ax.set_yticklabels([f'Interval {i+1}' for i in range(len(intervals))])
+    ax.set_yticklabels([f'Interval {i + 1}' for i in range(len(intervals))])
     ax.set_xlabel('Value')
     ax.set_title('Intervals Plot')
 
     plt.show()
+
+
 def pkcs1_v15_pad(buffer, modulus_size):
     prefix = b'\x00\x02'
     suffix = b'\x00'
@@ -45,11 +49,15 @@ def encrypt(message, public_key):
     ciphertext = cipher_rsa.encrypt(message)
     return ciphertext
 
+
 def encryptWithoutBib(message, public_key):
     return long_to_bytes(pow(bytes_to_long(message), public_key.e, public_key.n))
 
+
 def decryptWithoutBib(cipher, d, n):
     return pow(bytes_to_long(cipher), d, n)
+
+
 def oracle(ciphertext, private_key):
     try:
         sentinel = "Error"
@@ -62,10 +70,13 @@ def oracle(ciphertext, private_key):
     except:
         return False
 
+
 def oracleWithoutBib(ciphertext, private_key):
     message = decryptWithoutBib(ciphertext, private_key.d, private_key.n)
     bytes = long_to_bytes(message, 128)
     return bytes[:2] == b'\x00\x02'
+
+
 def ceil(x, y):
     return x // y + (x % y > 0)
 
@@ -135,6 +146,7 @@ def bleichenbacherAttack(cipher, public_key, private_key):
     m = a % n
     print(pkcs1_v15_unpad(long_to_bytes(m), 128))
 
+
 def bleichenbacherAttackWithoutBib(cipher, public_key, private_key):
     B = 2 ** (8 * 126)
     a = 2 * B
@@ -157,6 +169,10 @@ def bleichenbacherAttackWithoutBib(cipher, public_key, private_key):
     print("End of phase 1")
     while True:
         if len(M) > 1:
+            print("More then one interval")
+            print(M)
+            for i in M:
+                intervalList.append(i)
             s += 1
             ci = long_to_bytes((cipher * pow(s, e, n)) % n)
             queriesNeeded += 1
@@ -183,21 +199,22 @@ def bleichenbacherAttackWithoutBib(cipher, public_key, private_key):
                 r += 1
         M = nextIntervalls(M, s, B, n)
         intervalList.append(M)
-    intervallsProcessable = []
+    intervalList.append(M)
+    intervalsProcessable = []
     for intervall in intervalList[1:10]:
-        intervallsProcessable.append((intervall.lower, intervall.upper))
-    plot_intervals_as_lines(intervallsProcessable)
+        intervalsProcessable.append((intervall.lower, intervall.upper))
+    plot_intervals_as_lines(intervalsProcessable)
     a = M.lower
     m = a % n
     print("Queries needed: ", queriesNeeded)
     print(pkcs1_v15_unpad(long_to_bytes(m), 128))
 
+
 # Generiere ein RSA-Schlüsselpaar
 key = RSA.generate(1024)
-message = b'Never gonna give you up'
+message = b'Hello World'
 paddedMessage = pkcs1_v15_pad(message, 1024)
-cipherPaddedMessage=encryptWithoutBib(paddedMessage, key.public_key())
+cipherPaddedMessage = encryptWithoutBib(paddedMessage, key.public_key())
 bleichenbacherAttackWithoutBib(cipherPaddedMessage, key.public_key(), key)
-#cipher = encrypt(message, key.public_key())
-#bleichenbacherAttack(cipher, key.public_key(), key)
-
+# cipher = encrypt(message, key.public_key())
+# bleichenbacherAttack(cipher, key.public_key(), key)
