@@ -3,6 +3,25 @@ import random
 from Crypto.Cipher import PKCS1_v1_5
 from Crypto.PublicKey import RSA
 from Crypto.Util.number import bytes_to_long, long_to_bytes
+import matplotlib.pyplot as plt
+def plot_intervals_as_lines(intervals):
+    """
+    Plots a straight line from the lower bound to the upper bound of each interval.
+
+    Parameters:
+    intervals (list of tuples): List of intervals, each represented as a tuple (lower_bound, upper_bound).
+    """
+    fig, ax = plt.subplots()
+
+    for i, (lower_bound, upper_bound) in enumerate(intervals):
+        ax.plot([lower_bound, upper_bound], [i, i], marker='o')
+
+    ax.set_yticks(range(len(intervals)))
+    ax.set_yticklabels([f'Interval {i+1}' for i in range(len(intervals))])
+    ax.set_xlabel('Value')
+    ax.set_title('Intervals Plot')
+
+    plt.show()
 def pkcs1_v15_pad(buffer, modulus_size):
     prefix = b'\x00\x02'
     suffix = b'\x00'
@@ -164,8 +183,10 @@ def bleichenbacherAttackWithoutBib(cipher, public_key, private_key):
                 r += 1
         M = nextIntervalls(M, s, B, n)
         intervalList.append(M)
-    for intervall in intervalList[:10]:
-        print(intervall)
+    intervallsProcessable = []
+    for intervall in intervalList[1:10]:
+        intervallsProcessable.append((intervall.lower, intervall.upper))
+    plot_intervals_as_lines(intervallsProcessable)
     a = M.lower
     m = a % n
     print("Queries needed: ", queriesNeeded)
