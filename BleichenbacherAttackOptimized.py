@@ -7,7 +7,7 @@ def pkcs1_v15_pad(buffer, modulus_size):
     prefix = b'\x00\x02'
     suffix = b'\x00'
     padding_size = modulus_size // 8 - len(prefix) - len(suffix) - len(buffer)
-    if padding_size < 1:
+    if padding_size < 8:
         raise ValueError('message too long')
     padding = bytearray(random.choices(range(1, 256), k=padding_size))
     paddedMessage = prefix + padding + suffix + buffer
@@ -118,7 +118,6 @@ def bleichenbacherAttack(cipher, public_key, private_key):
 
 def bleichenbacherAttackWithoutBib(cipher, public_key, private_key):
     B = 2 ** (8 * 126)
-    s0 = 1
     a = 2 * B
     b = 3 * B - 1
     M = I.closed(a, b)
@@ -165,7 +164,8 @@ def bleichenbacherAttackWithoutBib(cipher, public_key, private_key):
                 r += 1
         M = nextIntervalls(M, s, B, n)
         intervalList.append(M)
-    print(intervalList[:10])
+    for intervall in intervalList[:10]:
+        print(intervall)
     a = M.lower
     m = a % n
     print("Queries needed: ", queriesNeeded)
